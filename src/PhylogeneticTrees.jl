@@ -1,5 +1,5 @@
 module PhylogeneticTrees
 
-# Write your package code here.
+include("src/types.jl")
 
 end
