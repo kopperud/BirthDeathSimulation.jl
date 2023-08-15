@@ -1,5 +1,7 @@
 module PhylogeneticTrees
 
-include("src/types.jl")
+include("types.jl")
+
+include("nodes.jl")
 
 end
