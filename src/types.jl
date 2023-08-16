@@ -27,16 +27,26 @@ mutable struct Node
     end
 end
 
-mutable struct RootNode <: AbstractNode
+mutable struct Leaf
     name::Int64
-    outbounds::Union{Union{Branch, Nothing}, Union{Branch, Nothing}}
+    inbounds::Union{Int64, Nothing}
 
-    function RootNode(name::Int64)
+    function Leaf(name::Int64)
         return new(name, nothing)
     end
 end
 
+mutable struct RootNode <: AbstractNode
+    name::Int64
+    outbounds::Union{Union{Branch, Nothing}, Union{Branch, Nothing}}
+
+    function RootNode()
+        return new(0, nothing)
+    end
+end
+
 mutable struct Tree
+    Root::RootNode
     Nodes::Dict{Int64, Node}
     Branches::Dict{Int64, Branch}
     nc::Int64
@@ -45,15 +55,11 @@ mutable struct Tree
     function Tree()
         Nodes = Dict{Int64, Node}()
         Branches = Dict{Int64, Branch}()
-        nc = 1
-        bc = 1
+        nc = 1 # node counter
+        bc = 1 # branch counter
 
-        n = Node(nc)
-
-        Nodes[nc] = n
-        nc += 1
-
-        return new(Nodes, Branches, nc, bc)
+        root = RootNode()
+        return new(root, Nodes, Branches, nc, bc)
     end
 end
 

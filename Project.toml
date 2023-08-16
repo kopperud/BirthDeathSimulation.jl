@@ -3,6 +3,9 @@ uuid = "1e97b59f-0837-4bde-8329-875b703414d1"
 authors = ["BT Kopperud"]
 version = "1.0.0-DEV"
 
+[deps]
+SparseArrays = "2f01184e-e22b-5df5-ae63-d93ebab69eaf"
+
 [compat]
 julia = "1"
 
