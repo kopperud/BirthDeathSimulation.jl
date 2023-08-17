@@ -1,6 +1,7 @@
 ## simulation functions
-export yule3
+export yule3, bds3
 import Distributions
+export bdsmodel
 
 struct bdsmodel
     λ::Vector{Float64}
@@ -113,102 +114,119 @@ end
 
 export prune_extinct!
 
+function prune_root!(tree::Tree)
+    ## check root
+    if (tree.Root.left == nothing) | (tree.Root.right == nothing)
+        if tree.Root.left != nothing
+            child_branch_idx = tree.Root.left
+        elseif tree.Root.right != nothing
+            child_branch_idx = tree.Root.right
+        else
+            error("eherhue")
+        end
+
+        child_node_idx = tree.Branches[child_branch_idx].to
+        grandchild_branch_indices = [
+                                tree.Nodes[child_node_idx].left,
+                                tree.Nodes[child_node_idx].right
+                                ]
+
+        for branch_index in grandchild_branch_indices
+            tree.Branches[branch_index].from = 0
+        end
+
+        delete!(tree.Branches, child_branch_idx)
+        delete!(tree.Nodes, child_node_idx)
+        tree.Root.left = grandchild_branch_indices[1]
+        tree.Root.right = grandchild_branch_indices[2]
+    end
+end
+
 function prune_extinct!(
         tree::Tree
     )
-#    while nnodes(tree) 
-    for (node_idx, node) in tree.Nodes        
-        ## remove terminals
-        if (node.left == nothing) & (node.right == nothing)
-            parent_branch_idx = node.inbounds
-            parent_node_idx = tree.Branches[parent_branch_idx].from
-            if parent_node_idx != 0 ## if not root
-                l = tree.Nodes[parent_node_idx].left
-                r = tree.Nodes[parent_node_idx].right
-                if l == parent_branch_idx
-                    tree.Nodes[parent_node_idx].left = nothing
-                elseif r == parent_branch_idx
-                    tree.Nodes[parent_node_idx].right = nothing
-                else
-                    error("asdasd")
+    ntax = ntaxa(tree)
+
+    prune_root!(tree)
+    pruned = [1]
+    #while nnodes(tree) > ntax-1
+    while pruned[end] > 0
+        c = 0
+        for (node_idx, node) in tree.Nodes        
+            ## remove terminals
+            if (node.left === nothing) & (node.right === nothing)
+                parent_branch_idx = node.inbounds
+                parent_node_idx = tree.Branches[parent_branch_idx].from
+                if parent_node_idx != 0 ## if not root
+                    l = tree.Nodes[parent_node_idx].left
+                    r = tree.Nodes[parent_node_idx].right
+                    if l == parent_branch_idx
+                        tree.Nodes[parent_node_idx].left = nothing
+                    elseif r == parent_branch_idx
+                        tree.Nodes[parent_node_idx].right = nothing
+                    else
+                        error("asdasd")
+                    end
+                else ## if parent is root
+                    if tree.Root.left == parent_branch_idx
+                        tree.Root.left = nothing
+                    elseif tree.Root.right == parent_branch_idx
+                        tree.Root.right = nothing
+                    else
+                        error("bug here")
+                    end
                 end
-            else ## if parent is root
-                if tree.Root.left == parent_branch_idx
-                    tree.Root.left = nothing
-                elseif tree.Root.right == parent_branch_idx
-                    tree.Root.right = nothing
+                delete!(tree.Nodes, node_idx)
+                delete!(tree.Branches, parent_branch_idx)
+                c += 1
+
+            ## merge branches for knuckles
+            elseif (node.left == nothing) | (node.right == nothing)
+                parent_branch_idx = node.inbounds
+                parent_node_idx = tree.Branches[parent_branch_idx].from
+                if node.left != nothing
+                    child_branch_idx = node.left
+                elseif node.right != nothing
+                    child_branch_idx = node.right
                 else
-                    error("bug here")
+                    error("hello")
                 end
-            end
-            delete!(tree.Nodes, node_idx)
-            delete!(tree.Branches, parent_branch_idx)
+                
+                tree.Branches[child_branch_idx].N += tree.Branches[parent_branch_idx].N
+                tree.Branches[child_branch_idx].bl += tree.Branches[parent_branch_idx].bl
 
-        ## merge branches for knuckles
-        elseif (node.left == nothing) | (node.right == nothing)
-            parent_branch_idx = node.inbounds
-            parent_node_idx = tree.Branches[parent_branch_idx].from
-            if node.left != nothing
-                child_branch_idx = node.left
-            else
-                child_branch_idx = node.right
-            end
-            
-            tree.Branches[child_branch_idx].N += tree.Branches[parent_branch_idx].N
-            tree.Branches[child_branch_idx].bl += tree.Branches[parent_branch_idx].bl
-
-            ## TODO: Need to re-assign the outbounds for the parental node
-            if parent_node_idx != 0
-                    addbranch!(t, n, new_node, bl, N)
-                    new_node.inbounds = t.bc
-                    n.left = t.bc
-                elseif n.right == nothing
-                    new_node = addnode!(t)
-                    N = SparseArrays.spzeros(Int64, 4,4)
-                  #  addbranch!(t, n, new_node, bl, N)
-                    new_node.inbounds = t.bc
-                    n.right = t.bc
-                else
-                    error("cant add more than two children")
+                ## TODO: Need to re-assign the outbounds for the parental node
+                if parent_node_idx != 0 ## if not root
+                    parent_node = tree.Nodes[parent_node_idx]
+                    l = parent_node.left
+                    r = parent_node.right
+                    if l == parent_branch_idx
+                        parent_node.left = child_branch_idx
+                    elseif r == parent_branch_idx
+                        parent_node.right = child_branch_idx
+                    else
+                        error("asdasd")
+                    end
+                else ## if parent is root
+                    if tree.Root.left == parent_branch_idx
+                        tree.Root.left = child_branch_idx
+                    elseif tree.Root.right == parent_branch_idx
+                        tree.Root.right = child_branch_idx
+                    else
+                        error("bug here")
+                    end
                 end
+                tree.Branches[child_branch_idx].from = parent_node_idx
+
+                delete!(tree.Nodes, node_idx)
+                delete!(tree.Branches, parent_branch_idx)
+                c += 1
             end
-
-
-
-#            child_node_idx = tree.Branches[child_branch_idx].to
-
-            tree.Branches[child_branch_idx].from = parent_node_idx
-
-            if tree.Nodes[parent_node_idx].left = 
-#            if child_node_idx in keys(tree.Leaves)
-            ## if child node is leaf
-#                tree.Leaves[child_node_idx].inbounds = parent_branch_idx
-#            else
-            ## if child node is internal
-#                tree.Nodes[child_node_idx].inbounds = parent_branch_idx
-#            end            
-            delete!(tree.Branches, parent_branch_idx)
-            delete!(tree.Nodes, node_idx)
         end
+        append!(pruned, c)
     end
 
-    ## check root
-    if (tree.Root.left == nothing)
-        child_branch_idx = tree.Root.right
-        child_node_idx = tree.Branches[child_branch_idx].to
-
-        grandchild_branches = [
-                               tree.Nodes[child_node_idx].left,
-                               tree.Nodes[child_node_idx].right
-                              ]
-
-        for grandchild_branch in grandchild_branches
-            tree.Branches[grandchild_branch].from = 0
-        end
-        delete!(tree.Branches, child_branch_idx)
-        tree.Root.left = grandchild_branches[1]
-        tree.Root.right = grandchild_branches[2]
-    end
+    prune_root!(tree)
 end
 
 

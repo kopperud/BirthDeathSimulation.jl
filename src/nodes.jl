@@ -61,6 +61,39 @@ function addleaf!(
     end
 end
 
+export treeheight
+export treelength
+
+function treelength(tree::Tree)
+    tl = 0.0
+    for (i, branch) in tree.Branches
+        tl += branch.bl
+    end
+    return(tl)
+end
+
+function treeheight(tree::Tree)
+    t = [0.0]
+    branch_index = tree.Root.left
+    treeheight_inner(tree, branch_index, t)
+    return(t[1])
+end
+
+function treeheight_inner(
+    tree::Tree,
+    branch_index::Int64,
+    t::Vector{Float64}
+    )
+    branch = tree.Branches[branch_index]
+    t[1] += branch.bl
+    idx = branch.to
+
+    if idx ∉ keys(tree.Leaves)
+    #    t[1] += branch.bl
+        left_branch_index = tree.Nodes[idx].left
+        treeheight_inner(tree, left_branch_index, t)
+    end
+end
 
 function addbranch!(
         tree::Tree,
