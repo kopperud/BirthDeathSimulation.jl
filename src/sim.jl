@@ -149,7 +149,7 @@ function prune_extinct!(
 
     prune_root!(tree)
     pruned = [1]
-    #while nnodes(tree) > ntax-1
+    
     while pruned[end] > 0
         c = 0
         for (node_idx, node) in tree.Nodes        

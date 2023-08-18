@@ -1,5 +1,8 @@
 export addnode!, addbranch!, parent
 export addleaf!
+export treeheight
+export treelength
+export get_children
 
 function addnode!(tree::Tree)  
     node = Node(tree.nc)
@@ -61,8 +64,7 @@ function addleaf!(
     end
 end
 
-export treeheight
-export treelength
+
 
 function treelength(tree::Tree)
     tl = 0.0
@@ -89,7 +91,6 @@ function treeheight_inner(
     idx = branch.to
 
     if idx ∉ keys(tree.Leaves)
-    #    t[1] += branch.bl
         left_branch_index = tree.Nodes[idx].left
         treeheight_inner(tree, left_branch_index, t)
     end
@@ -122,4 +123,18 @@ function parent(tree::Tree, n::Node)
         res = t.Nodes[parent_node]
     end
     return(res)
+end
+
+function get_children(tree::Tree, node::N) where {N <: AbstractNode}
+    left_branch_index = node.left
+    right_branch_index = node.right
+
+    left_branch = tree.Branches[left_branch_index]
+    right_branch = tree.Branches[right_branch_index]
+
+    children = [
+        left_branch,
+        right_branch
+    ]
+    return(children)
 end
