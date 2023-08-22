@@ -15,24 +15,27 @@ bds3 = bdsmodel([0.1, 0.2, 0.3], [0.05, 0.15, 0.25], 0.05)
 export sim_bdshift
 
 ##
-function sim_bdshift(model::bdsmodel, maxtime::Float64, maxtaxa::Int64)
+function sim_bdshift(model::bdsmodel, maxtime::Float64, maxtaxa::Int64, starting_state::Int64)
     tree = Tree()
-    left = tree.Root.left
-    right = tree.Root.right
+
+    @assert length(model.λ) == length(model.μ)
+    @assert starting_state <= length(model.λ)
+
+    n_states = length(model.λ)
     t = 0.0 ## time
     ntaxa = [0]
-    state = 1 ## state in the BDS model
+    #state = 1 ## state in the BDS model
 
     ## Draw two random event times
     ## left
-    N = SparseArrays.spzeros(Int64, 3, 3)
+    N = SparseArrays.spzeros(Int64, n_states, n_states)
     left_bl = 0.0
-    sim_inner!(model, tree, tree.Root, N, state, maxtime, ntaxa, maxtaxa, left_bl, t)
+    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, left_bl, t)
     
     ## right
-    N = SparseArrays.spzeros(Int64, 3, 3)
+    N = SparseArrays.spzeros(Int64, n_states, n_states)
     right_bl = 0.0
-    sim_inner!(model, tree, tree.Root, N, state, maxtime, ntaxa, maxtaxa, right_bl, t)
+    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, right_bl, t)
 
     return(tree)
 end
@@ -51,6 +54,7 @@ end
 function sim_inner!(
                     model::bdsmodel, 
                     tree::Tree, 
+                    n_states::Int64,
                     node::T, 
                     N::SparseArrays.SparseMatrixCSC{Int64,Int64},
                     state::Int64,
@@ -86,24 +90,24 @@ function sim_inner!(
                     new_node = tree.Nodes[tree.nc-1]
 
                     # Left subtree
-                    N = SparseArrays.spzeros(Int64, 3, 3)
+                    N = SparseArrays.spzeros(Int64, n_states, n_states)
                     bl = 0.0
-                    sim_inner!(model, tree, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
+                    sim_inner!(model, tree, n_states, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
 
                     # Right subtree
-                    N = SparseArrays.spzeros(Int64, 3, 3)
+                    N = SparseArrays.spzeros(Int64, n_states, n_states)
                     bl = 0.0
-                    sim_inner!(model, tree, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
+                    sim_inner!(model, tree, n_states, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
                 else ## rate shift
-                    possible_states = ones(Float64, 3)
+                    possible_states = ones(Float64, n_states)
                     possible_states[state] = 0.0
                     newstate_d = Distributions.Categorical(possible_states ./ sum(possible_states))
                     new_state = rand(newstate_d)
                     
                     N[new_state, state] += 1
-                    state = new_state
+                    #state = new_state
 
-                    sim_inner!(model, tree, node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
+                    sim_inner!(model, tree, n_states, node, N, new_state, maxtime, ntaxa, maxtaxa, bl, t)
                 end
             end
         end
@@ -149,7 +153,7 @@ function prune_extinct!(
 
     prune_root!(tree)
     pruned = [1]
-    
+
     while pruned[end] > 0
         c = 0
         for (node_idx, node) in tree.Nodes        
