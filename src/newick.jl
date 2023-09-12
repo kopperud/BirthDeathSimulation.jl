@@ -1,6 +1,7 @@
 export writenewick
 export newick
 export node_data
+export average_rates
 
 ## write a newick file
 @doc raw"""
@@ -21,17 +22,42 @@ tree = sim_bdshift(λ, μ, η)
 writenewick("/tmp/newick.tre", tree)
 ```
 """
-function writenewick(filename::String, tree::Tree)
-    newick_string = newick(tree)
+function writenewick(filename::String, tree::Tree, model)
+    newick_string = newick(tree, model)
 
-    open(filename, "a") do io
+    open(filename, "w") do io
         write(io, newick_string)
         write(io, "\n")
     end
 end
 
-function node_data(tree::Tree)
+function average_rates(tree::Tree, model::bdsmodel)
+    #res = #zeros(length(tree.Branches), 4)
+    res = Dict()
+    for (edge_index, branch) in tree.Branches
+        rates = [
+            model.λ,
+            model.μ,
+            model.λ .- model.μ,
+            model.μ ./ model.λ
+        ]
+        for (j, rate) in enumerate(rates)
+            x = 0.0
+            for (i, (t, state)) in enumerate(zip(branch.state_times, branch.states))
+                x += rate[state] * t
+            end
+            x = x / sum(branch.state_times)
+            res[edge_index,j] = x
+        end
+    end
+    return(res)
+end
+
+function node_data(tree::Tree, model::bdsmodel)
+    avg_rates = average_rates(tree, model)
     res = Dict{Int64,String}()
+
+
     for (i, branch) in tree.Branches
         #parent_branch_index = node.inbounds
         N = branch.N
@@ -45,7 +71,19 @@ function node_data(tree::Tree)
             end
             append!(nd, [entry])
         end
-        append!(nd, ["}]"])
+        ## average rates
+        append!(nd, ["},"])
+        append!(nd, ["lambda="])
+        append!(nd, [string(avg_rates[i,1])])
+        append!(nd, [",mu="])
+        append!(nd, [string(avg_rates[i,2])])
+        append!(nd, [",r="])
+        append!(nd, [string(avg_rates[i,3])])
+        append!(nd, [",epsilon="])
+        append!(nd, [string(avg_rates[i,4])])
+        append!(nd, ["]"])
+
+
         res[i] = *(nd...)
     end
     return(res)
@@ -53,8 +91,8 @@ end
 
 ## create a newick string from the data object
 ## translated from R-package treeio: https://github.com/YuLab-SMU/treeio/blob/master/R/write-beast.R
-function newick(tree::Tree)
-    nd = node_data(tree)
+function newick(tree::Tree, model::bdsmodel)
+    nd = node_data(tree, model)
     desc_branches = get_children(tree, tree.Root)
     
     s = []

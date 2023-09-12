@@ -16,17 +16,22 @@ function addnode!(
         tree::Tree, 
         n::T, 
         bl::Float64, 
-        N::SparseArrays.SparseMatrixCSC{Int64,Int64}
+        N::SparseArrays.SparseMatrixCSC{Int64,Int64},
+        states::Vector{Int64},
+        state_times::Vector{Float64}
     ) where {T <: AbstractNode}
 
+    #state_times = Float64[bl]
+    #states = Int64[state]
+    
     if n.left == nothing
         new_node = addnode!(tree)
-        addbranch!(tree, n, new_node, bl, N)
+        addbranch!(tree, n, new_node, bl, N, states, state_times)
         new_node.inbounds = tree.bc 
         n.left = tree.bc
     elseif n.right == nothing
         new_node = addnode!(tree)
-        addbranch!(tree, n, new_node, bl, N)
+        addbranch!(tree, n, new_node, bl, N, states, state_times)
         new_node.inbounds = tree.bc
         n.right = tree.bc
     else
@@ -46,17 +51,22 @@ function addleaf!(
          tree::Tree,
          n::T,
          bl::Float64,
-         N::SparseArrays.SparseMatrixCSC{Int64, Int64}
+         N::SparseArrays.SparseMatrixCSC{Int64, Int64},
+         states::Vector{Int64},
+         state_times::Vector{Float64}
         ) where {T <: AbstractNode}
+
+    #state_times = Float64[bl]
+    #states = Int64[state]
 
     if n.left == nothing
         leaf = addleaf!(tree)
-        addbranch!(tree, n, leaf, bl, N)
+        addbranch!(tree, n, leaf, bl, N, states, state_times)
         leaf.inbounds = tree.bc
         n.left = tree.bc
     elseif n.right == nothing
         leaf = addleaf!(tree)
-        addbranch!(tree, n, leaf, bl, N)
+        addbranch!(tree, n, leaf, bl, N, states, state_times)
         leaf.inbounds = tree.bc
         n.right = tree.bc
     else
@@ -101,10 +111,15 @@ function addbranch!(
         n1::T1, 
         n2::T2, 
         bl::Float64, 
-        N::SparseArrays.SparseMatrixCSC{Int64, Int64}
+        N::SparseArrays.SparseMatrixCSC{Int64, Int64},
+        states::Vector{Int64}, 
+        state_times::Vector{Float64}
     ) where {T1 <: AbstractNode, T2 <: AbstractNode}
     tree.bc += 1
-    b = Branch(n1.name, n2.name, bl, N) 
+    #state_times = Float64[bl]
+    #states = Int64[state]
+
+    b = Branch(n1.name, n2.name, bl, N, states, state_times) 
     tree.Branches[tree.bc] = b
 end
 

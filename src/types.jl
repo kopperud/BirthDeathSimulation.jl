@@ -14,6 +14,8 @@ mutable struct Branch <: AbstractBranch
     to::Union{Int64, Nothing}
     bl::Float64
     N::SparseArrays.SparseMatrixCSC{Int64, Int64}
+    states::Vector{Int64}
+    state_times::Vector{Float64}
 
 #    function Branch(name, from, to, bl)
 #        new(branch, from, to, bl, spzeros(4,4))

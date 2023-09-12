@@ -30,12 +30,16 @@ function sim_bdshift(model::bdsmodel, maxtime::Float64, maxtaxa::Int64, starting
     ## left
     N = SparseArrays.spzeros(Int64, n_states, n_states)
     left_bl = 0.0
-    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, left_bl, t)
+    states = Int64[]
+    state_times = Float64[]
+    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, left_bl, states, state_times, t)
     
     ## right
     N = SparseArrays.spzeros(Int64, n_states, n_states)
     right_bl = 0.0
-    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, right_bl, t)
+    states = Int64[]
+    state_times = Float64[]
+    sim_inner!(model, tree, n_states, tree.Root, N, starting_state, maxtime, ntaxa, maxtaxa, right_bl, states, state_times, t)
 
     return(tree)
 end
@@ -61,8 +65,10 @@ function sim_inner!(
                     maxtime, 
                     ntaxa::Vector{Int64},
                     maxtaxa, 
-                    bl::Float64,
-                    t
+                    b::Float64,
+                    states::Vector{Int64}, 
+                    state_times::Vector{Float64},
+                    t::Float64
     ) where {T <: AbstractNode}
 
     rates = [model.λ[state], model.μ[state], model.η]
@@ -70,8 +76,11 @@ function sim_inner!(
     scale = 1.0 / rate
     d = Distributions.Exponential(scale)
     event_time = rand(d)
-    bl += event_time
+    b += event_time
     t += event_time
+
+    append!(states, state)
+    append!(state_times, event_time)
 
     event_d = Distributions.Categorical(rates ./ sum(rates))
     event_type = rand(event_d)
@@ -79,25 +88,29 @@ function sim_inner!(
 
     if ntaxa[1] < maxtaxa
         if t > maxtime
-            addleaf!(tree, node, bl - (t-maxtime), N)
+            addleaf!(tree, node, b - (t-maxtime), N, states, state_times)
             ntaxa[1] += 1
         else
             if event_type == 2 ## extinction
-                addnode!(tree, node, bl, N)
+                addnode!(tree, node, b, N, states, state_times)
             else
                 if event_type == 1 ## speciation
-                    addnode!(tree, node, bl, N)
+                    addnode!(tree, node, b, N, states, state_times)
                     new_node = tree.Nodes[tree.nc-1]
 
                     # Left subtree
-                    N = SparseArrays.spzeros(Int64, n_states, n_states)
+                    Nl = SparseArrays.spzeros(Int64, n_states, n_states)
                     bl = 0.0
-                    sim_inner!(model, tree, n_states, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
+                    states = Int64[]
+                    state_times = Float64[]
+                    sim_inner!(model, tree, n_states, new_node, Nl, state, maxtime, ntaxa, maxtaxa, bl, states, state_times, t)
 
                     # Right subtree
-                    N = SparseArrays.spzeros(Int64, n_states, n_states)
-                    bl = 0.0
-                    sim_inner!(model, tree, n_states, new_node, N, state, maxtime, ntaxa, maxtaxa, bl, t)
+                    Nr = SparseArrays.spzeros(Int64, n_states, n_states)
+                    br = 0.0
+                    states = Int64[]
+                    state_times = Float64[]
+                    sim_inner!(model, tree, n_states, new_node, Nr, state, maxtime, ntaxa, maxtaxa, br, states, state_times, t)
                 else ## rate shift
                     possible_states = ones(Float64, n_states)
                     possible_states[state] = 0.0
@@ -107,12 +120,12 @@ function sim_inner!(
                     N[new_state, state] += 1
                     #state = new_state
 
-                    sim_inner!(model, tree, n_states, node, N, new_state, maxtime, ntaxa, maxtaxa, bl, t)
+                    sim_inner!(model, tree, n_states, node, N, new_state, maxtime, ntaxa, maxtaxa, b, states, state_times, t)
                 end
             end
         end
     else
-        addnode!(tree, node, 0.0, N)
+        addnode!(tree, node, 0.0, N, states, state_times)
     end
 end
 
@@ -198,6 +211,14 @@ function prune_extinct!(
                 
                 tree.Branches[child_branch_idx].N += tree.Branches[parent_branch_idx].N
                 tree.Branches[child_branch_idx].bl += tree.Branches[parent_branch_idx].bl
+                tree.Branches[child_branch_idx].states = vcat(
+                    tree.Branches[child_branch_idx].states,
+                    tree.Branches[parent_branch_idx].states
+                )
+                tree.Branches[child_branch_idx].state_times = vcat(
+                    tree.Branches[child_branch_idx].state_times,
+                    tree.Branches[parent_branch_idx].state_times
+                )
 
                 ## TODO: Need to re-assign the outbounds for the parental node
                 if parent_node_idx != 0 ## if not root
