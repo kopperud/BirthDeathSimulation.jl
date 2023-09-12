@@ -43,7 +43,7 @@ function average_rates(tree::Tree, model::bdsmodel)
         ]
         for (j, rate) in enumerate(rates)
             x = 0.0
-            for (i, (t, state)) in enumerate(zip(branch.state_times, branch.states))
+            for (t, state) in zip(branch.state_times, branch.states)
                 x += rate[state] * t
             end
             x = x / sum(branch.state_times)
