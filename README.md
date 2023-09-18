@@ -53,12 +53,14 @@ branches[1].states
 branches[1].state_times
 ```
 
+## Reconstructed tree
 To prune the extinct lineages, we can use the following command
 ```julia
 prune_extinct!(tree)
 ```
 This will mutate the object `tree`, by a) removing all extinct lineages, b) collapsing all 2-degree (knuckle) `Node`s such that the reconstructed tree only has 3-degree `Node`s, and c) adding the transition matrices `N` for branches that were concatenated.
 
+## Save to file
 To print the newick string, we can do the following
 ```julia
 newick_string = newick(tree, model)
