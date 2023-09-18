@@ -1,6 +1,6 @@
-using PhylogeneticTrees
+using BirthDeathSimulation
 using Test
 
-@testset "PhylogeneticTrees.jl" begin
+@testset "BirthDeathSimulation.jl" begin
     # Write your tests here.
 end
