@@ -12,8 +12,14 @@ mutable struct Tree
     nc::Int64
     bc::Int64
 end
-``` 
+```
 The tree is built using two several structs: a `RootNode`, several `Node`s, several `Leaf`s, and `Branch`es. `RootNode` has index 0, and `Node` and `Leaf` have indices 1,2,3 etc. `Branch` starts with index `1` and increments from there.
+
+## Installation
+```
+using Pkg
+Pkg.add(url="https://github.com/kopperud/PhylogeneticTrees.jl")
+```
 
 ## Create a complete tree
 Simulate a complete tree under the birth-death-shift process. First, we load the module, specify our model, and set the simulation conditions
@@ -30,8 +36,13 @@ starting_state = 1
 
 tree = sim_bdshift(model, max_time, max_taxa, starting_state)
 ```
+This can generate all sorts of trees, including trees where
+* no events happened, i.e. a two-taxon tree 
+* one of the two lineages descending from the root went extinct
+* all lineages went extinct
+* the maximum amount of taxa were reached and the simulation was terminated.
 
-This can generate all sorts of trees, including trees where a) no events happened, i.e. a two-taxon tree, b) all lineages went extinct, c) the maximum amount of taxa were reached and the simulation was terminated. Each `Branch` has several objects that record the events on the branch history. With the maatrix `N`, one can count the number of rate shifts that occurred on the branch
+Each `Branch` has several objects that record the events on the branch history. With the maatrix `N`, one can count the number of rate shifts that occurred on the branch
 ```julia
 branches = tree.Branches
 branches[1].N
