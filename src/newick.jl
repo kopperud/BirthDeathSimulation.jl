@@ -19,10 +19,10 @@ using PhylogeneticTrees
 
 tree = sim_bdshift(λ, μ, η)
 
-writenewick("/tmp/newick.tre", tree)
+writenewick("/tmp/newick.tre", tree, model)
 ```
 """
-function writenewick(filename::String, tree::Tree, model)
+function writenewick(filename::String, tree::Tree, model::bdsmodel)
     newick_string = newick(tree, model)
 
     open(filename, "w") do io
@@ -32,7 +32,6 @@ function writenewick(filename::String, tree::Tree, model)
 end
 
 function average_rates(tree::Tree, model::bdsmodel)
-    #res = #zeros(length(tree.Branches), 4)
     res = Dict()
     for (edge_index, branch) in tree.Branches
         rates = [
@@ -90,7 +89,6 @@ function node_data(tree::Tree, model::bdsmodel)
 end
 
 ## create a newick string from the data object
-## translated from R-package treeio: https://github.com/YuLab-SMU/treeio/blob/master/R/write-beast.R
 function newick(tree::Tree, model::bdsmodel)
     nd = node_data(tree, model)
     desc_branches = get_children(tree, tree.Root)

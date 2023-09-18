@@ -20,16 +20,13 @@ function addnode!(
         states::Vector{Int64},
         state_times::Vector{Float64}
     ) where {T <: AbstractNode}
-
-    #state_times = Float64[bl]
-    #states = Int64[state]
     
-    if n.left == nothing
+    if isnothing(n.left)
         new_node = addnode!(tree)
         addbranch!(tree, n, new_node, bl, N, states, state_times)
         new_node.inbounds = tree.bc 
         n.left = tree.bc
-    elseif n.right == nothing
+    elseif isnothing(n.right)
         new_node = addnode!(tree)
         addbranch!(tree, n, new_node, bl, N, states, state_times)
         new_node.inbounds = tree.bc
@@ -56,15 +53,12 @@ function addleaf!(
          state_times::Vector{Float64}
         ) where {T <: AbstractNode}
 
-    #state_times = Float64[bl]
-    #states = Int64[state]
-
-    if n.left == nothing
+    if isnothing(n.left)
         leaf = addleaf!(tree)
         addbranch!(tree, n, leaf, bl, N, states, state_times)
         leaf.inbounds = tree.bc
         n.left = tree.bc
-    elseif n.right == nothing
+    elseif isnothing(n.right)
         leaf = addleaf!(tree)
         addbranch!(tree, n, leaf, bl, N, states, state_times)
         leaf.inbounds = tree.bc
@@ -75,10 +69,9 @@ function addleaf!(
 end
 
 
-
 function treelength(tree::Tree)
     tl = 0.0
-    for (i, branch) in tree.Branches
+    for (_, branch) in tree.Branches
         tl += branch.bl
     end
     return(tl)
@@ -116,8 +109,6 @@ function addbranch!(
         state_times::Vector{Float64}
     ) where {T1 <: AbstractNode, T2 <: AbstractNode}
     tree.bc += 1
-    #state_times = Float64[bl]
-    #states = Int64[state]
 
     b = Branch(n1.name, n2.name, bl, N, states, state_times) 
     tree.Branches[tree.bc] = b

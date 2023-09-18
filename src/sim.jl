@@ -84,7 +84,6 @@ function sim_inner!(
 
     event_d = Distributions.Categorical(rates ./ sum(rates))
     event_type = rand(event_d)
-    #parent_node = t.Branches[branch].inbounds
 
     if ntaxa[1] < maxtaxa
         if t > maxtime
@@ -118,7 +117,6 @@ function sim_inner!(
                     new_state = rand(newstate_d)
                     
                     N[new_state, state] += 1
-                    #state = new_state
 
                     sim_inner!(model, tree, n_states, node, N, new_state, maxtime, ntaxa, maxtaxa, b, states, state_times, t)
                 end
@@ -162,8 +160,6 @@ end
 function prune_extinct!(
         tree::Tree
     )
-    ntax = ntaxa(tree)
-
     prune_root!(tree)
     pruned = [1]
 
@@ -220,7 +216,7 @@ function prune_extinct!(
                     tree.Branches[parent_branch_idx].state_times
                 )
 
-                ## TODO: Need to re-assign the outbounds for the parental node
+                ## re-assign the outbounds for the parental node
                 if parent_node_idx != 0 ## if not root
                     parent_node = tree.Nodes[parent_node_idx]
                     l = parent_node.left
