@@ -24,9 +24,7 @@ function sim_bdshift(model::bdsmodel, maxtime::Float64, maxtaxa::Int64, starting
     n_states = length(model.λ)
     t = 0.0 ## time
     ntaxa = [0]
-    #state = 1 ## state in the BDS model
 
-    ## Draw two random event times
     ## left
     N = SparseArrays.spzeros(Int64, n_states, n_states)
     left_bl = 0.0
