@@ -11,7 +11,7 @@ writes a newick file with the rate values as comments
 
 Example:
 ```julia
-using PhylogeneticTrees
+using BirthDeathSimulation
 
 λ = [0.1, 0.2]
 μ = [0.05, 0.15]

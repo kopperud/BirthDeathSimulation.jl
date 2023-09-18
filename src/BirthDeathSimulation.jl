@@ -1,4 +1,4 @@
-module PhylogeneticTrees
+module BirthDeathSimulation
 
 import SparseArrays
 import Distributions

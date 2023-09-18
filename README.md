@@ -1,6 +1,6 @@
-# PhylogeneticTrees
+# BirthDeathSimulation
 
-[![Build Status](https://github.com/kopperud/PhylogeneticTrees.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/kopperud/PhylogeneticTrees.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Build Status](https://github.com/kopperud/BirthDeathSimulation.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/kopperud/BirthDeathSimulation.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 This module contains a data structure to represent a rooted phylogenetic tree in units of time, as well as functions to simulate a tree under the birth-death-shift process, and to write the resulting tree as a newick string. The idea is that we store the nodes and the branches in a `Tree` object. The `Tree` object has three dictionaries and some index counters:
 ```julia
@@ -18,13 +18,13 @@ The tree is built using two several structs: a `RootNode`, several `Node`s, seve
 ## Installation
 ```
 using Pkg
-Pkg.add(url="https://github.com/kopperud/PhylogeneticTrees.jl")
+Pkg.add(url="https://github.com/kopperud/BirthDeathSimulation.jl")
 ```
 
 ## Create a complete tree
 Simulate a complete tree under the birth-death-shift process. First, we load the module, specify our model, and set the simulation conditions
 ```julia
-using PhylogeneticTrees
+using BirthDeathSimulation
 λ = [0.3, 0.5] ## speciation rates
 µ = [0.05, 0.15] ## extinction rates
 η = 2.5 ## shift rate
