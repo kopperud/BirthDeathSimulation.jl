@@ -61,17 +61,15 @@ function node_data(tree::Tree, model::bdsmodel)
         #parent_branch_index = node.inbounds
         N = branch.N
         entries = [Printf.@sprintf "%u" x for x in vcat(N...)]
-            
+#        entries = string.(vcat(N...))
+
         nd = String[]
         append!(nd, ["[&N={"])
-        for (i, entry) in enumerate(entries)
-            if i > 1
-                append!(nd, [","])
-            end
-            append!(nd, [entry])
-        end
-        ## average rates
+        ## this is the bottleneck. Very inefficient to print all the 0's in a sparse matrix
+        append!(nd, [join(entries, ",")]) 
         append!(nd, ["},"])
+
+        ## average rates
         append!(nd, ["lambda="])
         append!(nd, [string(avg_rates[i,1])])
         append!(nd, [",mu="])
@@ -83,7 +81,7 @@ function node_data(tree::Tree, model::bdsmodel)
         append!(nd, ["]"])
 
 
-        res[i] = *(nd...)
+        res[i] = join(nd)
     end
     return(res)
 end
@@ -93,8 +91,8 @@ function newick(tree::Tree, model::bdsmodel)
     nd = node_data(tree, model)
     desc_branches = get_children(tree, tree.Root)
     
-    s = []
-    append!(s, "(")
+    s = String[]
+    append!(s, ["("])
     n = ntaxa(tree)
 
     for (i, branch) in enumerate(desc_branches)
@@ -107,17 +105,17 @@ function newick(tree::Tree, model::bdsmodel)
         end
 
         if i == 1
-            append!(s, ",")
+            append!(s, [","])
         end
     end
-    append!(s, "):0.0;")
+    append!(s, ["):0.0;"])
     
-    newick = *(s...)
+    newick = join(s)
     return(newick)
 end
 
 function addinternal!(s, tree, nd, node)
-    append!(s, "(")
+    append!(s, ["("])
 
     desc_branches = get_children(tree, node)
 
@@ -131,25 +129,25 @@ function addinternal!(s, tree, nd, node)
         end
 
         if i == 1
-            append!(s, ",")
+            append!(s, [","])
         end
     end
 
     bl = tree.Branches[node.inbounds].bl
-    append!(s, ")")
-    append!(s, nd[node.inbounds])
-    append!(s, ":")
-    append!(s, string(bl))
+    append!(s, [")"])
+    append!(s, [nd[node.inbounds]])
+    append!(s, [":"])
+    append!(s, [string(bl)])
 end
 
 function addterminal!(s, tree, nd, leaf_node)
     tl = Random.randstring(10)
     bl = tree.Branches[leaf_node.inbounds].bl
 
-    append!(s, tl)
-    append!(s, nd[leaf_node.inbounds])
-    append!(s, ":")
-    append!(s, string(bl))
+    append!(s, [tl])
+    append!(s, [nd[leaf_node.inbounds]])
+    append!(s, [":"])
+    append!(s, [string(bl)])
 end
 
 function nnode(data)
